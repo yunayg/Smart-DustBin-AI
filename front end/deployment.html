@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deployment Request • Smart Dustbin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #09090b;
+    }
+    .title-font { font-family: 'Space Grotesk', sans-serif; }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-trash-can text-4xl text-emerald-500"></i>
+        <div>
+          <h1 class="text-2xl font-bold title-font tracking-tight">Smart Dustbin</h1>
+          <p class="text-xs text-emerald-400 -mt-1">AI Fill-Level Detection</p>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href="index.html" class="hover:text-emerald-400 transition">Home</a>
+        <a href="query.html" class="hover:text-emerald-400 transition">Query & Reports</a>
+        <a href="#" class="text-emerald-400 font-semibold">Deployment</a>
+      </nav>
+
+      <button onclick="logout()"
+              class="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold rounded-2xl transition flex items-center gap-2">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Login Prompt Overlay (No Cancel Button) -->
+  <div id="login-prompt" class="hidden fixed inset-0 bg-black/90 z-[200] flex items-center justify-center">
+    <div class="glass rounded-3xl p-12 max-w-md text-center">
+      <i class="fa-solid fa-lock text-6xl text-emerald-400 mb-6"></i>
+      <h2 class="text-3xl font-bold title-font mb-4">Login Required</h2>
+      <p class="text-zinc-300 mb-8">You must be logged in to submit a deployment request.</p>
+
+      <button onclick="goToLogin()"
+              class="px-10 py-4 bg-emerald-500 text-black font-semibold rounded-2xl text-lg w-full">
+        Go to Login Page
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 py-16">
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold title-font tracking-tight mb-4">New Deployment Request</h1>
+      <p class="text-zinc-400 text-xl">All fields start empty. Required fields marked with *</p>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-10">
+      <!-- Form -->
+      <div class="lg:col-span-8">
+        <div class="glass rounded-3xl p-10">
+          <form id="deployment-form">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="md:col-span-2">
+                <label class="block text-sm text-zinc-400 mb-2">Organization / Municipality Name <span class="text-red-400">*</span></label>
+                <input id="org-name" type="text" required placeholder="e.g. BBMP Bengaluru"
+                       class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+              </div>
+
+              <div>
+                <label class="block text-sm text-zinc-400 mb-2">Contact Person Name <span class="text-red-400">*</span></label>
+                <input id="contact-name" type="text" required placeholder="Full name"
+                       class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+              </div>
+
+              <div>
+                <label class="block text-sm text-zinc-400 mb-2">Location of Dustbin <span class="text-red-400">*</span></label>
+                <input id="location" type="text" required placeholder="e.g. Koramangala, Bengaluru"
+                       class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+              </div>
+
+              <div>
+                <label class="block text-sm text-zinc-400 mb-2">Sensor ID Prefix <span class="text-red-400">*</span></label>
+                <input id="sensor-id" type="text" required placeholder="e.g. SENSOR_"
+                       class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+              </div>
+
+              <div>
+                <label class="block text-sm text-zinc-400 mb-2">Expected Installation Date</label>
+                <input id="date-installed" type="date"
+                       class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+              </div>
+
+              <div>
+                <label class="block text-sm text-zinc-400 mb-2">Number of Bins <span class="text-red-400">*</span></label>
+                <input id="bins-count" type="number" min="1" required
+                       class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+              </div>
+            </div>
+
+            <div class="mt-8">
+              <label class="block text-sm text-zinc-400 mb-2">Additional Requirements / Notes</label>
+              <textarea id="additional-notes" rows="5" placeholder="Any special requirements..."
+                        class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400"></textarea>
+            </div>
+
+            <div class="mt-10 flex gap-4">
+              <button type="button" onclick="submitDeployment()"
+                      class="flex-1 py-5 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold rounded-3xl text-lg transition">
+                Submit Deployment Request
+              </button>
+              <button type="button" onclick="addMoreBins()"
+                      class="flex-1 py-5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-3xl text-lg transition">
+                + Add More Bins
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="lg:col-span-4 space-y-8">
+        <div class="glass rounded-3xl p-8">
+          <h3 class="font-semibold text-xl mb-6">What Happens Next?</h3>
+          <div class="space-y-6 text-sm text-zinc-300">
+            <div class="flex gap-4">
+              <span class="text-emerald-400 font-bold">1.</span>
+              <span>Our team reviews your request within 24 hours</span>
+            </div>
+            <div class="flex gap-4">
+              <span class="text-emerald-400 font-bold">2.</span>
+              <span>Site survey and final quotation</span>
+            </div>
+            <div class="flex gap-4">
+              <span class="text-emerald-400 font-bold">3.</span>
+              <span>Installation & new dashboard creation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let binGroups = 1;
+
+    function checkLoginStatus() {
+      if (localStorage.getItem('isLoggedIn') !== 'true') {
+        document.getElementById('login-prompt').classList.remove('hidden');
+      }
+    }
+
+    function addMoreBins() {
+      if (localStorage.getItem('isLoggedIn') !== 'true') {
+        document.getElementById('login-prompt').classList.remove('hidden');
+        return;
+      }
+      binGroups++;
+      alert(`Bin group ${binGroups} added! In full version this would add new form fields.`);
+    }
+
+    function submitDeployment() {
+      if (localStorage.getItem('isLoggedIn') !== 'true') {
+        document.getElementById('login-prompt').classList.remove('hidden');
+        return;
+      }
+
+      const org = document.getElementById('org-name').value.trim();
+      const contact = document.getElementById('contact-name').value.trim();
+      const location = document.getElementById('location').value.trim();
+      const sensorPrefix = document.getElementById('sensor-id').value.trim();
+      const binsCount = document.getElementById('bins-count').value;
+
+      if (!org || !contact || !location || !sensorPrefix || !binsCount) {
+        alert("Please fill all required fields marked with *");
+        return;
+      }
+
+      const successHTML = `
+        <div class="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center">
+          <div class="glass rounded-3xl p-12 max-w-lg text-center">
+            <i class="fa-solid fa-circle-check text-8xl text-emerald-500 mb-6"></i>
+            <h2 class="text-4xl font-bold title-font mb-4">Request Submitted Successfully!</h2>
+            <p class="text-xl text-zinc-300 mb-8">
+              Thank you!<br>
+              Deployment request for <span class="text-emerald-400">${binsCount}</span> bins at <span class="text-emerald-400">${location}</span> received.
+            </p>
+            <button onclick="window.location.href='index.html'"
+                    class="px-10 py-4 bg-emerald-500 text-black font-semibold rounded-2xl text-lg">
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+      `;
+
+      const div = document.createElement('div');
+      div.innerHTML = successHTML;
+      document.body.appendChild(div.firstElementChild);
+    }
+
+    function logout() {
+      if (confirm("Are you sure you want to logout?")) {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        window.location.replace("index.html");
+      }
+    }
+
+    function goToLogin() {
+      window.location.replace("index.html");
+    }
+
+    window.onload = function () {
+      checkLoginStatus();
+      console.log('%c✅ deployment.html loaded with simplified login prompt', 'color:#34d399');
+    };
+  </script>
+</body>
+</html>

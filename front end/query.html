@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Query & Reports • Smart Dustbin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #09090b;
+    }
+    .title-font { font-family: 'Space Grotesk', sans-serif; }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-trash-can text-4xl text-emerald-500"></i>
+        <div>
+          <h1 class="text-2xl font-bold title-font tracking-tight">Smart Dustbin</h1>
+          <p class="text-xs text-emerald-400 -mt-1">AI Fill-Level Detection</p>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href="index.html" class="hover:text-emerald-400 transition">Home</a>
+        <a href="index.html#dashboard" class="hover:text-emerald-400 transition">Dashboard</a>
+        <a href="#" class="text-emerald-400 font-semibold">Query & Reports</a>
+      </nav>
+
+      <button onclick="logout()"
+              class="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold rounded-2xl transition flex items-center gap-2">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Login Prompt Overlay (No Cancel Button) -->
+  <div id="login-prompt" class="hidden fixed inset-0 bg-black/90 z-[200] flex items-center justify-center">
+    <div class="glass rounded-3xl p-12 max-w-md text-center">
+      <i class="fa-solid fa-lock text-6xl text-emerald-400 mb-6"></i>
+      <h2 class="text-3xl font-bold title-font mb-4">Login Required</h2>
+      <p class="text-zinc-300 mb-8">You must be logged in to access the Query & Reports system.</p>
+
+      <button onclick="goToLogin()"
+              class="px-10 py-4 bg-emerald-500 text-black font-semibold rounded-2xl text-lg w-full">
+        Go to Login Page
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 py-12">
+    <div class="flex items-center justify-between mb-10">
+      <div>
+        <h1 class="text-5xl font-bold title-font tracking-tight">Query System & Reports</h1>
+        <p class="text-emerald-400 mt-2 text-xl">Analyze waste trends • Generate professional reports</p>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-8">
+      <!-- Query Builder -->
+      <div class="lg:col-span-4">
+        <div class="glass rounded-3xl p-8 sticky top-24">
+          <h3 class="font-semibold text-xl mb-6 flex items-center gap-3">
+            <i class="fa-solid fa-magnifying-glass"></i> Build Your Query
+          </h3>
+
+          <div class="space-y-6">
+            <div>
+              <label class="text-xs text-zinc-400 block mb-2">Select Bin / Area</label>
+              <select id="query-bin" class="w-full bg-zinc-950 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-emerald-400">
+                <option value="all">All Bins (City Average)</option>
+                <option value="SENSOR_01">SENSOR_01 - Koramangala</option>
+                <option value="SENSOR_02">SENSOR_02 - Indiranagar</option>
+                <option value="SENSOR_03">SENSOR_03 - MG Road</option>
+                <option value="SENSOR_04">SENSOR_04 - Jayanagar</option>
+                <option value="SENSOR_05">SENSOR_05 - Whitefield</option>
+                <option value="SENSOR_06">SENSOR_06 - HSR Layout</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-xs text-zinc-400 block mb-2">Time Period</label>
+              <div class="grid grid-cols-2 gap-3">
+                <button onclick="setPeriod(this, '7d')" class="period-btn active bg-emerald-500 text-black rounded-2xl py-4 text-sm font-medium">Last 7 days</button>
+                <button onclick="setPeriod(this, '30d')" class="period-btn bg-zinc-800 hover:bg-white/10 border border-white/10 rounded-2xl py-4 text-sm font-medium">Last 30 days</button>
+                <button onclick="setPeriod(this, '90d')" class="period-btn bg-zinc-800 hover:bg-white/10 border border-white/10 rounded-2xl py-4 text-sm font-medium">Last 3 months</button>
+                <button onclick="setPeriod(this, 'custom')" class="period-btn bg-zinc-800 hover:bg-white/10 border border-white/10 rounded-2xl py-4 text-sm font-medium">Custom Range</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs text-zinc-400 block mb-2">Metric</label>
+              <select id="query-metric" class="w-full bg-zinc-950 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-emerald-400">
+                <option value="fill">Average Fill Level Trend</option>
+                <option value="collection">Collection Frequency</option>
+                <option value="overflow">Overflow Risk Predictions</option>
+              </select>
+            </div>
+
+            <button onclick="runQuery()"
+                    class="w-full py-5 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold rounded-3xl text-lg transition flex items-center justify-center gap-3">
+              <i class="fa-solid fa-chart-line"></i> RUN QUERY
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Area -->
+      <div class="lg:col-span-8">
+        <div class="glass rounded-3xl p-8">
+          <div class="flex justify-between items-center mb-8">
+            <div>
+              <h3 id="query-title" class="text-2xl font-semibold">Waste Fill Level Trend</h3>
+              <p id="query-subtitle" class="text-emerald-400">All Bins • Last 7 days</p>
+            </div>
+            <button onclick="generateReport()"
+                    class="px-8 py-4 bg-white text-black font-semibold rounded-3xl flex items-center gap-3 hover:bg-emerald-400 transition">
+              <i class="fa-solid fa-download"></i> Download CSV Report
+            </button>
+          </div>
+
+          <div class="h-96 mb-10">
+            <canvas id="trendChart"></canvas>
+          </div>
+
+          <div class="grid grid-cols-3 gap-6">
+            <div class="glass rounded-3xl p-6 text-center">
+              <p class="text-xs text-zinc-400 mb-1">AVERAGE FILL</p>
+              <p id="stat-avg" class="text-5xl font-bold text-emerald-400">68%</p>
+            </div>
+            <div class="glass rounded-3xl p-6 text-center">
+              <p class="text-xs text-zinc-400 mb-1">PEAK FILL</p>
+              <p id="stat-peak" class="text-5xl font-bold text-emerald-400">94%</p>
+            </div>
+            <div class="glass rounded-3xl p-6 text-center">
+              <p class="text-xs text-zinc-400 mb-1">PREDICTED OVERFLOWS</p>
+              <p id="stat-overflow" class="text-5xl font-bold text-emerald-400">2</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let trendChart;
+    let currentPeriod = '7d';
+
+    const sampleTrendData = {
+      '7d': { labels: ['Apr 10','Apr 11','Apr 12','Apr 13','Apr 14','Apr 15','Apr 16'], values: [45,52,68,71,83,79,91] },
+      '30d': { labels: ['Mar 18','Mar 25','Apr 1','Apr 8','Apr 15'], values: [38,55,62,74,88] },
+      '90d': { labels: ['Jan','Feb','Mar','Apr'], values: [42,59,67,81] }
+    };
+
+    function initTrendChart() {
+      const ctx = document.getElementById('trendChart');
+      if (trendChart) trendChart.destroy();
+
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: sampleTrendData['7d'].labels,
+          datasets: [{
+            label: 'Fill Level (%)',
+            data: sampleTrendData['7d'].values,
+            borderColor: '#34d399',
+            backgroundColor: 'rgba(52, 211, 153, 0.2)',
+            borderWidth: 4,
+            tension: 0.4,
+            pointRadius: 5,
+            pointHoverRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { min: 0, max: 100, grid: { color: '#334155' }, ticks: { color: '#64748b' } },
+            x: { grid: { color: '#334155' }, ticks: { color: '#64748b' } }
+          }
+        }
+      });
+    }
+
+    function setPeriod(btn, period) {
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active', 'bg-emerald-500', 'text-black'));
+      btn.classList.add('active', 'bg-emerald-500', 'text-black');
+      currentPeriod = period;
+    }
+
+    function runQuery() {
+      if (localStorage.getItem('isLoggedIn') !== 'true') {
+        document.getElementById('login-prompt').classList.remove('hidden');
+        return;
+      }
+
+      const binSelect = document.getElementById('query-bin').value;
+      const metric = document.getElementById('query-metric').value;
+      const data = sampleTrendData[currentPeriod] || sampleTrendData['7d'];
+
+      trendChart.data.labels = data.labels;
+      trendChart.data.datasets[0].data = data.values;
+      trendChart.update();
+
+      const binName = binSelect === 'all' ? 'All Bins (City Average)' : document.getElementById('query-bin').selectedOptions[0].text;
+      document.getElementById('query-title').textContent = metric === 'fill' ? 'Waste Fill Level Trend' : metric === 'collection' ? 'Collection Frequency' : 'Overflow Risk';
+      document.getElementById('query-subtitle').textContent = `${binName} • ${currentPeriod === '7d' ? 'Last 7 days' : currentPeriod === '30d' ? 'Last 30 days' : 'Last 3 months'}`;
+
+      document.getElementById('stat-avg').textContent = Math.floor(50 + Math.random() * 35) + '%';
+      document.getElementById('stat-peak').textContent = Math.floor(80 + Math.random() * 18) + '%';
+      document.getElementById('stat-overflow').textContent = Math.floor(Math.random() * 5);
+    }
+
+    function generateReport() {
+      if (localStorage.getItem('isLoggedIn') !== 'true') {
+        document.getElementById('login-prompt').classList.remove('hidden');
+        return;
+      }
+
+      const csvContent = `Bin ID,Date,Fill Level (%),Predicted Full Time,Status\nSENSOR_01,2026-04-10,45,3h 45m,Normal\n...`;
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `waste-report-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      alert("✅ Report downloaded successfully!");
+    }
+
+    function logout() {
+      if (confirm("Are you sure you want to logout?")) {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        window.location.replace("index.html");
+      }
+    }
+
+    function goToLogin() {
+      window.location.replace("index.html");   // Fixed reliable redirect
+    }
+
+    // Initialize
+    window.onload = function () {
+      initTrendChart();
+
+      if (localStorage.getItem('isLoggedIn') !== 'true') {
+        document.getElementById('login-prompt').classList.remove('hidden');
+      }
+
+      console.log('%c✅ query.html loaded successfully', 'color:#34d399');
+    };
+  </script>
+</body>
+</html>
