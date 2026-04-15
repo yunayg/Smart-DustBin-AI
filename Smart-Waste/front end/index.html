@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Dustbin • AI Fill-Level Detection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    body { font-family: 'Inter', sans-serif; }
+    .title-font { font-family: 'Space Grotesk', sans-serif; }
+
+    .hero-bg { background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%); }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .bin-container:hover {
+      transform: scale(1.05) rotate(3deg);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .progress-circle {
+      background: conic-gradient(#34d399 0% var(--progress), #334155 var(--progress) 100%);
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white">
+
+  <!-- Header -->
+  <header class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-trash-can text-4xl text-emerald-500"></i>
+        <div>
+          <h1 class="text-2xl font-bold title-font tracking-tight">Smart Dustbin</h1>
+          <p class="text-xs text-emerald-400 -mt-1">AI Fill-Level Detection</p>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href="#howitworks" class="hover:text-emerald-400 transition">How it Works</a>
+        <a href="#dashboard" class="hover:text-emerald-400 transition">My Dashboard</a>
+        <a href="query.html" class="hover:text-emerald-400 transition font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-magnifying-glass"></i> My Queries
+        </a>
+        <a href="analytics.html" class="hover:text-emerald-400 transition font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-chart-pie"></i> Analytics
+        </a>
+        <a href="#segregation-guide" class="hover:text-emerald-400 transition font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-recycle"></i> Segregation Guide
+        </a>
+        <a href="deployment.html" class="hover:text-emerald-400 transition font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-rocket"></i> Deployment
+        </a>
+      </nav>
+
+      <div class="flex items-center gap-3" id="auth-section">
+        <div id="user-profile" class="hidden flex items-center gap-3 cursor-pointer" onclick="toggleUserMenu()">
+          <div class="w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-400 rounded-2xl flex items-center justify-center text-white font-semibold text-lg" id="user-avatar">A</div>
+          <div class="hidden md:block text-left">
+            <p class="font-semibold text-sm" id="username">User</p>
+            <p class="text-xs text-emerald-400 -mt-px">Online</p>
+          </div>
+          <i class="fa-solid fa-chevron-down text-xs"></i>
+        </div>
+
+        <button onclick="showLoginModal()" id="login-btn"
+                class="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold rounded-2xl transition text-sm">
+          Login
+        </button>
+
+        <button onclick="showRegisterModal()" id="register-btn"
+                class="px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-2xl transition text-sm">
+          Register
+        </button>
+      </div>
+    </div>
+  </header>
+  <!-- Login Modal -->
+  <div id="login-modal" class="hidden fixed inset-0 bg-black/80 z-[100] flex items-center justify-center">
+    <div class="glass rounded-3xl p-10 w-full max-w-md">
+      <div class="text-center mb-8">
+        <i class="fa-solid fa-trash-can text-5xl text-emerald-500 mb-4"></i>
+        <h2 class="text-3xl font-bold title-font">Sign In</h2>
+        <p class="text-zinc-400 mt-2">Access your personal dashboard</p>
+      </div>
+
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm text-zinc-400 mb-1">Username or Email</label>
+          <input id="login-username" type="text" placeholder="Enter username or email"
+                 class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+        </div>
+        <div>
+          <label class="block text-sm text-zinc-400 mb-1">Password</label>
+          <input id="login-password" type="password" placeholder="Enter password"
+                 class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+        </div>
+
+        <button onclick="performLogin()"
+                class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold rounded-2xl text-lg transition mt-6">
+          Login
+        </button>
+
+        <p onclick="hideLoginModal()" class="text-center text-zinc-400 hover:text-white cursor-pointer text-sm mt-4">
+          Cancel
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div id="register-modal" class="hidden fixed inset-0 bg-black/80 z-[100] flex items-center justify-center">
+    <div class="glass rounded-3xl p-10 w-full max-w-md">
+      <div class="text-center mb-8">
+        <i class="fa-solid fa-trash-can text-5xl text-emerald-500 mb-4"></i>
+        <h2 class="text-3xl font-bold title-font">Create Account</h2>
+        <p class="text-zinc-400 mt-2">Start managing your own dustbins</p>
+      </div>
+
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm text-zinc-400 mb-1">Full Name</label>
+          <input id="register-name" type="text" placeholder="Enter your full name"
+                 class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+        </div>
+        <div>
+          <label class="block text-sm text-zinc-400 mb-1">Email</label>
+          <input id="register-email" type="email" placeholder="Enter your email"
+                 class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+        </div>
+        <div>
+          <label class="block text-sm text-zinc-400 mb-1">Password</label>
+          <input id="register-password" type="password" placeholder="Create password"
+                 class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-400">
+        </div>
+
+        <button onclick="performRegister()"
+                class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold rounded-2xl text-lg transition mt-6">
+          Create My Account
+        </button>
+
+        <p onclick="hideRegisterModal()" class="text-center text-zinc-400 hover:text-white cursor-pointer text-sm mt-4">
+          Cancel
+        </p>
+      </div>
+    </div>
+  </div>
+  <!-- Hero Section -->
+  <section class="hero-bg py-24">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="space-y-8">
+          <div class="inline-flex items-center gap-2 bg-zinc-900 border border-emerald-500/30 rounded-full px-5 py-2 text-sm">
+            <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
+            Real-time AI Waste Intelligence
+          </div>
+
+          <h1 class="text-6xl md:text-7xl font-bold title-font leading-none tracking-tighter">
+            Smart Dustbin<br>
+            <span class="text-emerald-400">AI Fill-Level Detection</span>
+          </h1>
+
+          <p class="text-xl text-zinc-300 max-w-lg">
+            Create your account, manage your own dustbins, run custom queries, and deploy new bins.
+          </p>
+
+          <div class="flex flex-wrap gap-4">
+            <button onclick="scrollToSection('dashboard')" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold rounded-2xl text-lg transition flex items-center gap-3">
+              Open My Dashboard <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <button onclick="window.location.href='query.html'"
+                    class="px-8 py-4 border-2 border-emerald-400 hover:bg-emerald-400 hover:text-black font-semibold rounded-2xl text-lg transition flex items-center gap-3">
+              <i class="fa-solid fa-magnifying-glass"></i> My Queries
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Sensor Demo -->
+        <div class="glass rounded-3xl p-8 bin-container">
+          <div class="flex justify-between items-start mb-6">
+            <div>
+              <p class="text-emerald-400 text-sm font-medium tracking-widest">SENSOR_01 • KORAMANGALA</p>
+              <h3 class="text-3xl font-bold" id="hero-fill-text">73% FILL LEVEL</h3>
+            </div>
+            <div class="text-right">
+              <span class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 text-sm px-4 py-1.5 rounded-2xl">
+                <i class="fa-solid fa-circle text-xs animate-pulse"></i> ONLINE
+              </span>
+            </div>
+          </div>
+
+          <div class="flex justify-center my-8">
+            <div id="fill-circle" class="progress-circle w-52 h-52 rounded-full flex items-center justify-center border-8 border-zinc-900 relative" style="--progress: 73%;">
+              <div class="bg-zinc-900 w-40 h-40 rounded-full flex flex-col items-center justify-center text-center">
+                <div id="fill-percentage" class="text-7xl font-bold text-emerald-400">73</div>
+                <div class="text-sm tracking-widest text-zinc-400">FULL</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center text-sm text-zinc-400">
+            Predicted to reach capacity in <span id="hero-time" class="text-white font-semibold">3h 45m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- How It Works -->
+  <section id="howitworks" class="py-20 bg-zinc-900">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-4xl font-bold text-center mb-4">How It Works</h2>
+      <p class="text-zinc-400 text-center max-w-md mx-auto mb-16">Three-stage pipeline from sensor data to actionable intelligence</p>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="glass rounded-3xl p-8">
+          <div class="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center text-3xl mb-6">01</div>
+          <h3 class="text-2xl font-semibold mb-3">ULTRASONIC Measure</h3>
+          <p class="text-zinc-400">Ultrasonic sensor continuously measures waste level inside the bin with millimeter precision.</p>
+        </div>
+        <div class="glass rounded-3xl p-8">
+          <div class="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center text-3xl mb-6">02</div>
+          <h3 class="text-2xl font-semibold mb-3">AI ENGINE Predict</h3>
+          <p class="text-zinc-400">ML model analyzes fill patterns and predicts exactly when the bin will reach capacity.</p>
+        </div>
+        <div class="glass rounded-3xl p-8">
+          <div class="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center text-3xl mb-6">03</div>
+          <h3 class="text-2xl font-semibold mb-3">NOTIFY Alert</h3>
+          <p class="text-zinc-400">Instant SMS and push notifications sent to collection teams with optimized route suggestions.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Stack -->
+  <section id="tech" class="py-20">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-4xl font-bold text-center mb-4">Tech Stack</h2>
+      <p class="text-zinc-400 text-center mb-12">Hardware and software working in harmony</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="glass rounded-3xl p-8 text-center hover:border-emerald-500/30 transition">
+          <i class="fa-solid fa-microchip text-4xl text-emerald-400 mb-4"></i>
+          <h4 class="font-semibold">Arduino / ESP32</h4>
+          <p class="text-sm text-zinc-400">Microcontroller</p>
+        </div>
+        <div class="glass rounded-3xl p-8 text-center hover:border-emerald-500/30 transition">
+          <i class="fa-solid fa-wifi text-4xl text-emerald-400 mb-4"></i>
+          <h4 class="font-semibold">WiFi / LoRa</h4>
+          <p class="text-sm text-zinc-400">IoT Connectivity</p>
+        </div>
+        <div class="glass rounded-3xl p-8 text-center hover:border-emerald-500/30 transition">
+          <i class="fa-solid fa-brain text-4xl text-emerald-400 mb-4"></i>
+          <h4 class="font-semibold">TensorFlow Lite</h4>
+          <p class="text-sm text-zinc-400">ML Prediction</p>
+        </div>
+        <div class="glass rounded-3xl p-8 text-center hover:border-emerald-500/30 transition">
+          <i class="fa-solid fa-chart-pie text-4xl text-emerald-400 mb-4"></i>
+          <h4 class="font-semibold">Analytics Dashboard</h4>
+          <p class="text-sm text-zinc-400">Cloud Storage</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Extra Features -->
+  <section id="features" class="py-20 bg-zinc-900">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-4xl font-bold text-center mb-16">Extra Features</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="glass rounded-3xl p-8">
+          <i class="fa-solid fa-satellite-dish text-4xl text-emerald-400 mb-6"></i>
+          <h4 class="font-semibold text-xl mb-2">Real-Time Monitoring</h4>
+          <p class="text-zinc-400">Live fill-level data streamed from every connected bin across the city.</p>
+        </div>
+        <div class="glass rounded-3xl p-8">
+          <i class="fa-solid fa-route text-4xl text-emerald-400 mb-6"></i>
+          <h4 class="font-semibold text-xl mb-2">Route Optimization</h4>
+          <p class="text-zinc-400">AI calculates the most efficient collection routes, saving fuel and time.</p>
+        </div>
+        <div class="glass rounded-3xl p-8">
+          <i class="fa-solid fa-sms text-4xl text-emerald-400 mb-6"></i>
+          <h4 class="font-semibold text-xl mb-2">SMS &amp; Push Notifications</h4>
+          <p class="text-zinc-400">Automated alerts when bins approach capacity thresholds.</p>
+        </div>
+        <div class="glass rounded-3xl p-8">
+          <i class="fa-solid fa-chart-bar text-4xl text-emerald-400 mb-6"></i>
+          <h4 class="font-semibold text-xl mb-2">Personal Analytics</h4>
+          <p class="text-zinc-400">Your own dashboard and saved queries</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Waste Segregation Guide -->
+  <section id="segregation-guide" class="py-20 bg-zinc-900">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-12">
+        <h2 class="text-5xl font-bold title-font tracking-tight mb-4">Waste Segregation Guide</h2>
+        <p class="text-emerald-400 text-xl">Learn how to properly sort your waste for a cleaner tomorrow</p>
+      </div>
+
+      <!-- Your Corrected Image -->
+      <div class="flex justify-center mb-12">
+        <img src="https://greensutra.in/wp-content/uploads/2020/03/Waste-Segregation-1024x398.png"
+             alt="Waste Segregation Bins Guide"
+             class="rounded-3xl shadow-2xl max-w-4xl w-full border border-white/10 bg-zinc-950 p-4">
+      </div>
+
+      <div class="glass rounded-3xl p-12 max-w-5xl mx-auto">
+        <div class="prose prose-invert max-w-none text-zinc-300">
+          <p class="text-lg leading-relaxed">
+            Waste segregation is the process of identifying, classifying, dividing and sorting waste to enable reuse, recycling, and safe disposal.
+          </p>
+
+          <h3 class="text-2xl font-bold text-emerald-400 mt-12 mb-4 flex items-center gap-3">🌱 Introduction</h3>
+          <p>Waste segregation is the process of identifying, classifying, dividing and sorting of garbage and waste products in an effort to reduce, reuse and recycle materials. It is important to correctly identify the type of waste generated to manage it effectively.</p>
+
+          <h3 class="text-2xl font-bold text-emerald-400 mt-12 mb-6 flex items-center gap-3">♻️ Types of Waste</h3>
+          <div class="grid md:grid-cols-2 gap-8">
+            <div><strong class="text-white">Wet Waste</strong><br>Includes food waste, soiled wrappers, tissues, yard waste, and other biodegradable materials.</div>
+            <div><strong class="text-white">Dry Waste</strong><br>Includes bottles, cans, clothing, plastic, wood, glass, metals and paper. These are mostly recyclable materials.</div>
+            <div><strong class="text-white">Sanitary Waste</strong><br>Human-related waste including hygiene products and medical-related waste.</div>
+            <div><strong class="text-white">E-Waste</strong><br>Electronic waste such as phones, laptops, chargers and electronic devices.</div>
+            <div><strong class="text-white">Hazardous Waste</strong><br>Industrial or household waste with dangerous chemical properties.</div>
+            <div><strong class="text-white">Inert Waste</strong><br>Waste that does not react chemically or biologically and does not decompose easily.</div>
+          </div>
+
+          <h3 class="text-2xl font-bold text-emerald-400 mt-12 mb-4 flex items-center gap-3">🌍 Significance of Waste Segregation</h3>
+          <p>Waste segregation prevents environmental contamination, reduces landfill usage, and enables proper treatment of different waste types.</p>
+
+          <h3 class="text-2xl font-bold text-emerald-400 mt-12 mb-6 flex items-center gap-3">🏠 Simple Ways to Practice Waste Segregation</h3>
+          <ul class="list-disc pl-6 space-y-3 text-zinc-300">
+            <li><strong>Use Separate Bins</strong> – Use labeled bins for organic, recyclable, and non-recyclable waste.</li>
+            <li><strong>Educate Everyone</strong> – Spread awareness in homes, offices, and communities.</li>
+            <li><strong>Minimize Contamination</strong> – Keep waste clean and dry. Rinse containers before recycling.</li>
+            <li><strong>Composting</strong> – Convert organic waste into natural fertilizer.</li>
+            <li><strong>Handle Recyclables Properly</strong> – Flatten bottles and boxes to improve recycling efficiency.</li>
+            <li><strong>Hazardous Waste Handling</strong> – Store chemicals, batteries, and medicines separately for safe disposal.</li>
+            <li><strong>E-Waste Management</strong> – Dispose electronics through proper collection centers and drives.</li>
+            <li><strong>Reduce & Reuse</strong> – Avoid single-use items and reuse materials whenever possible.</li>
+            <li><strong>Community Participation</strong> – Encourage group efforts for better waste management results.</li>
+          </ul>
+
+          <h3 class="text-2xl font-bold text-emerald-400 mt-12 mb-6 flex items-center gap-3">🤖 Technologies Used in Waste Segregation</h3>
+          <ul class="list-disc pl-6 space-y-3 text-zinc-300">
+            <li><strong>Automated Sorting Systems</strong> – Use robotics, sensors, and conveyor belts to sort waste automatically.</li>
+            <li><strong>Optical Sorting Technology</strong> – Uses light and sensors to detect and separate materials.</li>
+            <li><strong>Magnetic Separators</strong> – Extract metals from mixed waste streams efficiently.</li>
+            <li><strong>Mobile Apps & QR Systems</strong> – Help users understand proper disposal methods using smart tagging.</li>
+            <li><strong>Chemical Analysis</strong> – Detects toxic materials to prevent contamination.</li>
+          </ul>
+
+          <h3 class="text-2xl font-bold text-emerald-400 mt-12 mb-4 flex items-center gap-3">🚀 Conclusion</h3>
+          <p class="text-lg">Waste segregation is essential for sustainable living. With increasing awareness, government policies, and modern technologies, especially in India’s urban areas, proper waste management is becoming more effective and important than ever.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Personal Dashboard -->
+  <section id="dashboard" class="py-20 bg-zinc-900">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-4xl font-bold title-font mb-8">My Dashboard</h2>
+      <div id="personal-bin-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+    </div>
+  </section>
+  <!-- Final CTA -->
+  <section class="py-20 border-t border-zinc-800">
+    <div class="max-w-4xl mx-auto text-center px-6">
+      <h2 class="text-5xl font-bold mb-6">Ready to deploy your own smart dustbins?</h2>
+      <button onclick="window.location.href='deployment.html'"
+              class="px-10 py-5 bg-white text-black font-semibold rounded-3xl text-xl hover:bg-emerald-400 transition flex items-center gap-3 mx-auto">
+        Start Deployment Request →
+      </button>
+    </div>
+  </section>
+
+  <script>
+    function scrollToSection(id) {
+      const element = document.getElementById(id);
+      if (element) element.scrollIntoView({ behavior: "smooth" });
+    }
+
+    // Hero live demo
+    let heroFill = 73;
+    setInterval(() => {
+      heroFill = Math.max(65, Math.min(98, heroFill + (Math.random() * 14 - 7)));
+      document.getElementById('fill-percentage').textContent = Math.floor(heroFill);
+      document.getElementById('hero-fill-text').textContent = `${Math.floor(heroFill)}% FILL LEVEL`;
+      document.getElementById('fill-circle').style.setProperty('--progress', Math.floor(heroFill) + '%');
+
+      const hours = Math.floor(Math.random() * 5);
+      const mins = Math.floor(Math.random() * 60);
+      document.getElementById('hero-time').textContent = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    }, 3800);
+
+    // Login / Register
+    function showLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); }
+    function hideLoginModal() { document.getElementById('login-modal').classList.add('hidden'); }
+    function showRegisterModal() { document.getElementById('register-modal').classList.remove('hidden'); }
+    function hideRegisterModal() { document.getElementById('register-modal').classList.add('hidden'); }
+
+    function performLogin() {
+      const username = document.getElementById('login-username').value.trim() || "User";
+      hideLoginModal();
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('username', username);
+      checkLoginStatus();
+      renderPersonalDashboard();
+      alert(`✅ Welcome, ${username}!`);
+    }
+
+    function performRegister() {
+      const name = document.getElementById('register-name').value.trim() || "User";
+      hideRegisterModal();
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('username', name);
+      checkLoginStatus();
+      renderPersonalDashboard();
+      alert(`✅ Account created! Welcome, ${name}!`);
+    }
+
+    // Clean Logout
+    function logout() {
+      if (confirm("Are you sure you want to logout?")) {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        window.location.reload();
+      }
+    }
+
+    function toggleUserMenu() {
+      if (confirm("Do you want to logout?")) logout();
+    }
+
+    function checkLoginStatus() {
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      const username = localStorage.getItem('username') || "User";
+
+      if (isLoggedIn) {
+        document.getElementById('user-profile').classList.remove('hidden');
+        document.getElementById('login-btn').classList.add('hidden');
+        document.getElementById('register-btn').classList.add('hidden');
+        document.getElementById('username').textContent = username;
+      } else {
+        document.getElementById('user-profile').classList.add('hidden');
+        document.getElementById('login-btn').classList.remove('hidden');
+        document.getElementById('register-btn').classList.remove('hidden');
+      }
+    }
+
+    // Personal Dashboard
+    let userBins = [];
+    function renderPersonalDashboard() {
+      const container = document.getElementById('personal-bin-grid');
+      container.innerHTML = '';
+
+      if (userBins.length === 0) {
+        userBins = [
+          { id: "SENSOR_01", location: "Koramangala", fill: 68, time: "4h 20m" },
+          { id: "SENSOR_02", location: "Indiranagar", fill: 45, time: "12h" }
+        ];
+      }
+
+      userBins.forEach(bin => {
+        const card = document.createElement('div');
+        card.className = "glass rounded-3xl p-6";
+        card.innerHTML = `
+          <p class="text-emerald-400 text-xs">${bin.id}</p>
+          <h4 class="font-bold text-2xl mt-2">${bin.fill}%</h4>
+          <p class="text-zinc-400">${bin.location}</p>
+          <div class="mt-6 text-center text-xs text-zinc-400">Full in <span class="text-white">${bin.time}</span></div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Initialize
+    window.onload = function () {
+      checkLoginStatus();
+      renderPersonalDashboard();
+      console.log('%c🚀 Smart Dustbin Dashboard ready with corrected Waste Segregation Guide', 'color:#10b981');
+    };
+  </script>
+</body>
+</html>
